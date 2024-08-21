@@ -195,7 +195,7 @@ public:
     if(pwm == 0) {
       // stop ledc
       ledcDetachPin(this->pin);
-    }else{
+    }else {
       // attach ledc
       ledcAttachPin(this->pin, this->channel);
       ledcWrite(this->channel, this->pwm);
@@ -462,11 +462,18 @@ public:
       this->handleApiFanSetPWM(request);
     });
   };
-
-  unsigned long onceTime = millis();
   
   void loop() {
     unsigned long currentTime = millis();
+    // try to set fan speed, some fan pins does not produce correct pwm signal on startup
+    for (Fan &fan : fans) {
+      fan.setSpeed(fan.getPWM());
+    }
+
+    for (TachoInput &tacho : tacho_inputs) {
+      tacho.watch();
+    }
+
     // connect to wifi
     if (WiFi.status() != WL_CONNECTED) {
       lastWifiConnect = currentTime;
@@ -484,15 +491,6 @@ public:
       Serial.print("Connected to wifi: ");
       Serial.println(WiFi.localIP());
       server.begin(); // safe to start webserver
-    }
-
-    // execute once, try to set fan speed, some fan pins does not produce correct pwm signal
-    for (Fan &fan : fans) {
-      fan.setSpeed(fan.getPWM());
-    }
-    
-    for (TachoInput &tacho : tacho_inputs) {
-      tacho.watch();
     }
   }
 
